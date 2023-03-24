@@ -7,6 +7,7 @@
 #include <Adafruit_LEDBackpack.h>
 #include <Adafruit_GFX.h>
 #include <BluetoothSerial.h>
+#include <NimBLEDevice.h>
 
 #define LED_MATRIX_ADDR 0x70
 #define BUZZER_PIN 16
@@ -22,7 +23,20 @@ PubSubClient client(net);
 int air_quality;
 int sound_level;
 
+static const char *SERVICE_UUID = "3a4e2ff2-c9fb-11ed-afa1-0242ac120002";
+static const char *CHARACTERISTIC_UUID = "7214fb32-c9fb-11ed-afa1-0242ac120002";
+
 BluetoothSerial SerialBT;
+
+class CharacteristicCallbacks : public NimBLECharacteristicCallbacks
+{
+  void onWrite(NimBLECharacteristic *pCharacteristic)
+  {
+    std::string value = pCharacteristic->getValue();
+    Serial.print("Received value: ");
+    Serial.println(value.c_str());
+  }
+};
 
 int readAndDisplayAirQuality()
 {
@@ -140,7 +154,7 @@ void publishMessage()
   client.publish(AWS_IOT_PUBLISH_TOPIC, jsonBuffer);
 }
 
-void processBluetoothData()
+/* void processBluetoothData()
 {
   if (SerialBT.available())
   {
@@ -156,7 +170,7 @@ void processBluetoothData()
       matrix.writeDisplay();
     }
   }
-}
+} */
 
 void setup()
 {
@@ -180,8 +194,26 @@ void setup()
   delay(1000);
 
   connectAWS();
-  SerialBT.begin("Receiver"); // Initialize Bluetooth Serial connection
-  Serial.println("Waiting for connections...");
+  Serial.println("Starting Arduino BLE Server application...");
+
+  NimBLEDevice::init("Receiver");
+
+  NimBLEServer *pServer = NimBLEDevice::createServer();
+  NimBLEService *pService = pServer->createService(SERVICE_UUID);
+  NimBLECharacteristic *pCharacteristic = pService->createCharacteristic(
+      CHARACTERISTIC_UUID,
+      NIMBLE_PROPERTY::READ |
+          NIMBLE_PROPERTY::WRITE |
+          NIMBLE_PROPERTY::NOTIFY);
+
+  pCharacteristic->setCallbacks(new CharacteristicCallbacks());
+  pCharacteristic->setValue("Arduino Peripheral");
+
+  pService->start();
+
+  NimBLEAdvertising *pAdvertising = NimBLEDevice::getAdvertising();
+  pAdvertising->addServiceUUID(SERVICE_UUID);
+  pAdvertising->start();
 
   int status = WL_IDLE_STATUS;
   Serial.println("\nConnecting");
@@ -211,8 +243,8 @@ void loop()
   Serial.print(air_quality);
   Serial.print(F(" Sound_level: "));
   Serial.print(sound_level);
-  processBluetoothData(); // Process incoming Bluetooth data
+  /* processBluetoothData(); // Process incoming Bluetooth data */
   publishMessage();
   client.loop();
-  delay(1000);
+  delay(2000);
 }
