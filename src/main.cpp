@@ -6,6 +6,7 @@
 #include <Wire.h>
 #include <Adafruit_LEDBackpack.h>
 #include <Adafruit_GFX.h>
+#include <BluetoothSerial.h>
 
 #define LED_MATRIX_ADDR 0x70
 #define BUZZER_PIN 16
@@ -20,6 +21,8 @@ WiFiClientSecure net = WiFiClientSecure();
 PubSubClient client(net);
 int air_quality;
 int sound_level;
+
+BluetoothSerial SerialBT;
 
 int readAndDisplayAirQuality()
 {
@@ -96,6 +99,7 @@ void connectAWS()
     Serial.print(".");
   }
 
+  //
   // Configure WiFiClientSecure to use the AWS IoT device credentials
   net.setCACert(AWS_CERT_CA);
   net.setCertificate(AWS_CERT_CRT);
@@ -125,7 +129,6 @@ void connectAWS()
 
   Serial.println("AWS IoT Connected!");
 }
-
 void publishMessage()
 {
   StaticJsonDocument<200> doc;
@@ -135,6 +138,24 @@ void publishMessage()
   serializeJson(doc, jsonBuffer); // print to client
 
   client.publish(AWS_IOT_PUBLISH_TOPIC, jsonBuffer);
+}
+
+void processBluetoothData()
+{
+  if (SerialBT.available())
+  {
+    String data = SerialBT.readStringUntil('\n');
+    if (data == "1")
+    { // Turn on the LED matrix display
+      matrix.fillScreen(1);
+      matrix.writeDisplay();
+    }
+    else if (data == "0")
+    { // Turn off the LED matrix display
+      matrix.fillScreen(0);
+      matrix.writeDisplay();
+    }
+  }
 }
 
 void setup()
@@ -158,8 +179,11 @@ void setup()
   Serial.begin(115200);
   delay(1000);
 
-  int status = WL_IDLE_STATUS;
   connectAWS();
+  SerialBT.begin("Receiver"); // Initialize Bluetooth Serial connection
+  Serial.println("Waiting for connections...");
+
+  int status = WL_IDLE_STATUS;
   Serial.println("\nConnecting");
   Serial.println(get_wifi_status(status));
   while (WiFi.status() != WL_CONNECTED)
@@ -185,8 +209,9 @@ void loop()
   }
   Serial.print(F("Air_quality: "));
   Serial.print(air_quality);
-  Serial.print(F("  Sound_level: "));
+  Serial.print(F(" Sound_level: "));
   Serial.print(sound_level);
+  processBluetoothData(); // Process incoming Bluetooth data
   publishMessage();
   client.loop();
   delay(1000);
