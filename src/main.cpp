@@ -8,7 +8,6 @@
 #include <Adafruit_GFX.h>
 #include <BluetoothSerial.h>
 #include <NimBLEDevice.h>
-
 #define LED_MATRIX_ADDR 0x70
 #define BUZZER_PIN 16
 #define MQ135_PIN 34
@@ -98,6 +97,23 @@ void messageHandler(char *topic, byte *payload, unsigned int length)
   deserializeJson(doc, payload);
   const char *message = doc["message"];
   Serial.println(message);
+  int air_quality = doc["air_quality"];
+  int soung_level = doc["sound_level"];
+  for (int i = 0; i < length; i++) 
+  {
+    Serial.print((char)payload[i]); // Pring payload content
+  }
+    char buzzer = (char)payload[62]; // Extracting the controlling command from the Payload to Controlling Buzzer from AWS
+    Serial.print("Command: ");
+    Serial.println(buzzer);
+    if (air_quality == '0' || sound_level == '0')
+    {
+      digitalWrite(BUZZER_PIN, HIGH);
+    }
+    else
+    {
+      digitalWrite(BUZZER_PIN, LOW);
+    }
 }
 
 void connectAWS()
