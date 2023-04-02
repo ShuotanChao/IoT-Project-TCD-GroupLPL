@@ -1,4 +1,5 @@
 #include <WiFi.h>
+#include <MQ135.h>
 #include "Secrets.h"
 #include <WiFiClientSecure.h>
 #include <PubSubClient.h>
@@ -15,12 +16,12 @@
 
 #define AWS_IOT_PUBLISH_TOPIC "esp32/pub"
 #define AWS_IOT_SUBSCRIBE_TOPIC "esp32/sub"
-
+MQ135 mq135(MQ135_PIN);
 Adafruit_8x8matrix matrix = Adafruit_8x8matrix();
 WiFiClientSecure net = WiFiClientSecure();
 PubSubClient client(net);
-int air_quality;
-int sound_level;
+float air_quality;
+float sound_level;
 
 static const char *SERVICE_UUID = "3a4e2ff2-c9fb-11ed-afa1-0242ac120002";
 static const char *CHARACTERISTIC_UUID = "7214fb32-c9fb-11ed-afa1-0242ac120002";
@@ -37,14 +38,14 @@ class CharacteristicCallbacks : public NimBLECharacteristicCallbacks
   }
 };
 
-int readAndDisplayAirQuality()
+float readAndDisplayAirQuality()
 {
 
-  int air_quality = analogRead(MQ135_PIN);
-  digitalWrite(BUZZER_PIN, HIGH);
+  
+  float air_quality = mq135.getPPM();
+  /* digitalWrite(BUZZER_PIN, HIGH);
   delay(1000);
-  digitalWrite(BUZZER_PIN, LOW);
-
+  digitalWrite(BUZZER_PIN, LOW); */
   matrix.clear();
   matrix.setCursor(0, 0);
   matrix.print(air_quality);
@@ -54,11 +55,11 @@ int readAndDisplayAirQuality()
   return air_quality;
 }
 
-int readAndDisplaySoundLevel()
+float readAndDisplaySoundLevel()
 {
 
-  int sound_level = analogRead(MAX_PIN);
-
+  int mic_value = analogRead(MAX_PIN);
+  float sound_level = 20 * log10((float)mic_value / 4095.0 * 3.3 / 0.0067);
   matrix.clear();
   matrix.setCursor(0, 0);
   matrix.print(sound_level);
@@ -97,8 +98,8 @@ void messageHandler(char *topic, byte *payload, unsigned int length)
   deserializeJson(doc, payload);
   const char *message = doc["message"];
   Serial.println(message);
-  int air_quality = doc["air_quality"];
-  int soung_level = doc["sound_level"];
+  float air_quality = doc["air_quality"];
+  float soung_level = doc["sound_level"];
   for (int i = 0; i < length; i++) 
   {
     Serial.print((char)payload[i]); // Pring payload content
@@ -106,9 +107,11 @@ void messageHandler(char *topic, byte *payload, unsigned int length)
     char buzzer = (char)payload[62]; // Extracting the controlling command from the Payload to Controlling Buzzer from AWS
     Serial.print("Command: ");
     Serial.println(buzzer);
-    if (air_quality == '0' || sound_level == '0')
+    if (air_quality > 1000 && sound_level > 65)
     {
       digitalWrite(BUZZER_PIN, HIGH);
+      delay(1000);
+      digitalWrite(BUZZER_PIN, LOW);
     }
     else
     {
@@ -259,6 +262,7 @@ void loop()
   Serial.print(air_quality);
   Serial.print(F(" Sound_level: "));
   Serial.print(sound_level);
+  Serial.print(" dB");
   /* processBluetoothData(); // Process incoming Bluetooth data */
   publishMessage();
   client.loop();
