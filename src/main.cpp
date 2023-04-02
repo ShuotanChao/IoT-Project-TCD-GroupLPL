@@ -258,13 +258,20 @@ void loop()
     Serial.println(F("Failed to read from sensors!"));
     return;
   }
-  Serial.print(F("Air_quality: "));
-  Serial.print(air_quality);
-  Serial.print(F(" Sound_level: "));
-  Serial.print(sound_level);
-  Serial.print(" dB");
-  /* processBluetoothData(); // Process incoming Bluetooth data */
-  publishMessage();
+  //print out serial values and publish message if air quality is above 0 and smaller than 2000 and sound level is above 0 and smaller than 100
+  if (air_quality>0 && air_quality<2000 && sound_level>0 && sound_level<100)
+  {
+    Serial.print(F("Air_quality: "));
+    Serial.print(air_quality);
+    Serial.print(F(" Sound_level: "));
+    Serial.print(sound_level);
+    Serial.print(" dB");
+    /* processBluetoothData(); // Process incoming Bluetooth data */
+    publishMessage();
+  }
+  else{
+    Serial.println("Uncommon data detected");
+  }
   client.loop();
   delay(2000);
 }
