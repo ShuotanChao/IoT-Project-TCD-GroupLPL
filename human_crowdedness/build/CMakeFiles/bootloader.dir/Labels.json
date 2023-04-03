@@ -1,0 +1,43 @@
+{
+	"sources" : 
+	[
+		{
+			"file" : "/Users/borjagq/Library/CloudStorage/OneDrive-TrinityCollegeDublin/InternetOfThings/Source/IoT-Project-TCD-GroupLPL/human_crowdedness/build/CMakeFiles/bootloader"
+		},
+		{
+			"file" : "/Users/borjagq/Library/CloudStorage/OneDrive-TrinityCollegeDublin/InternetOfThings/Source/IoT-Project-TCD-GroupLPL/human_crowdedness/build/CMakeFiles/bootloader.rule"
+		},
+		{
+			"file" : "/Users/borjagq/Library/CloudStorage/OneDrive-TrinityCollegeDublin/InternetOfThings/Source/IoT-Project-TCD-GroupLPL/human_crowdedness/build/CMakeFiles/bootloader-complete.rule"
+		},
+		{
+			"file" : "/Users/borjagq/Library/CloudStorage/OneDrive-TrinityCollegeDublin/InternetOfThings/Source/IoT-Project-TCD-GroupLPL/human_crowdedness/build/bootloader-prefix/src/bootloader-stamp/bootloader-build.rule"
+		},
+		{
+			"file" : "/Users/borjagq/Library/CloudStorage/OneDrive-TrinityCollegeDublin/InternetOfThings/Source/IoT-Project-TCD-GroupLPL/human_crowdedness/build/bootloader-prefix/src/bootloader-stamp/bootloader-configure.rule"
+		},
+		{
+			"file" : "/Users/borjagq/Library/CloudStorage/OneDrive-TrinityCollegeDublin/InternetOfThings/Source/IoT-Project-TCD-GroupLPL/human_crowdedness/build/bootloader-prefix/src/bootloader-stamp/bootloader-download.rule"
+		},
+		{
+			"file" : "/Users/borjagq/Library/CloudStorage/OneDrive-TrinityCollegeDublin/InternetOfThings/Source/IoT-Project-TCD-GroupLPL/human_crowdedness/build/bootloader-prefix/src/bootloader-stamp/bootloader-install.rule"
+		},
+		{
+			"file" : "/Users/borjagq/Library/CloudStorage/OneDrive-TrinityCollegeDublin/InternetOfThings/Source/IoT-Project-TCD-GroupLPL/human_crowdedness/build/bootloader-prefix/src/bootloader-stamp/bootloader-mkdir.rule"
+		},
+		{
+			"file" : "/Users/borjagq/Library/CloudStorage/OneDrive-TrinityCollegeDublin/InternetOfThings/Source/IoT-Project-TCD-GroupLPL/human_crowdedness/build/bootloader-prefix/src/bootloader-stamp/bootloader-patch.rule"
+		},
+		{
+			"file" : "/Users/borjagq/Library/CloudStorage/OneDrive-TrinityCollegeDublin/InternetOfThings/Source/IoT-Project-TCD-GroupLPL/human_crowdedness/build/bootloader-prefix/src/bootloader-stamp/bootloader-update.rule"
+		}
+	],
+	"target" : 
+	{
+		"labels" : 
+		[
+			"bootloader"
+		],
+		"name" : "bootloader"
+	}
+}
