@@ -41,7 +41,6 @@ class CharacteristicCallbacks : public NimBLECharacteristicCallbacks
 float readAndDisplayAirQuality()
 {
 
-  
   float air_quality = mq135.getPPM();
   /* digitalWrite(BUZZER_PIN, HIGH);
   delay(1000);
@@ -58,14 +57,29 @@ float readAndDisplayAirQuality()
 float readAndDisplaySoundLevel()
 {
 
+  float max9814_gain = 60.0;            // Set this to the gain value you have selected for the MAX9814 (40dB, 50dB, or 60dB)
+  float adc_ref_voltage = 3.3;          // Set this to your ADC reference voltage (e.g., 3.3V or 5V)
+  // float microphone_sensitivity = -44.0; // Set this to the sensitivity of your electret microphone (e.g., -44 dBV/Pa)
+
   int mic_value = analogRead(MAX_PIN);
-  float sound_level = 20 * log10((float)mic_value / 4095.0 * 3.3 / 0.0067);
+  Serial.println(mic_value);
+  float output_voltage = (float)mic_value / 4095.0 * adc_ref_voltage;
+
+  // Calculate the input-referred voltage of the microphone
+  // float input_voltage = output_voltage / pow(10, max9814_gain / 20);
+  // float sensitivity_v_per_pa = pow(10, microphone_sensitivity / 20) * 0.001;
+  // float sound_pressure = input_voltage / sensitivity_v_per_pa;
+
+  // Calculate the sound pressure level in dB SPL
+  // Calculate the sound pressure level in dB SPL
+  float sound_level1 = 20 * log10(output_voltage / adc_ref_voltage);
+
   matrix.clear();
   matrix.setCursor(0, 0);
-  matrix.print(sound_level);
+  matrix.print(sound_level1);
   matrix.writeDisplay();
   delay(1000);
-  return sound_level;
+  return sound_level1;
 }
 
 String get_wifi_status(int status)
@@ -100,23 +114,23 @@ void messageHandler(char *topic, byte *payload, unsigned int length)
   Serial.println(message);
   float air_quality = doc["air_quality"];
   float soung_level = doc["sound_level"];
-  for (int i = 0; i < length; i++) 
+  for (int i = 0; i < length; i++)
   {
     Serial.print((char)payload[i]); // Pring payload content
   }
-    char buzzer = (char)payload[62]; // Extracting the controlling command from the Payload to Controlling Buzzer from AWS
-    Serial.print("Command: ");
-    Serial.println(buzzer);
-    if (air_quality > 1000 && sound_level > 65)
-    {
-      digitalWrite(BUZZER_PIN, HIGH);
-      delay(1000);
-      digitalWrite(BUZZER_PIN, LOW);
-    }
-    else
-    {
-      digitalWrite(BUZZER_PIN, LOW);
-    }
+  char buzzer = (char)payload[62]; // Extracting the controlling command from the Payload to Controlling Buzzer from AWS
+  Serial.print("Command: ");
+  Serial.println(buzzer);
+  if (air_quality > 1000 && sound_level > 65)
+  {
+    digitalWrite(BUZZER_PIN, HIGH);
+    delay(1000);
+    digitalWrite(BUZZER_PIN, LOW);
+  }
+  else
+  {
+    digitalWrite(BUZZER_PIN, LOW);
+  }
 }
 
 void connectAWS()
@@ -258,20 +272,21 @@ void loop()
     Serial.println(F("Failed to read from sensors!"));
     return;
   }
-  //print out serial values and publish message if air quality is above 0 and smaller than 2000 and sound level is above 0 and smaller than 100
-  if (air_quality>0 && air_quality<2000 && sound_level>0 && sound_level<100)
-  {
-    Serial.print(F("Air_quality: "));
-    Serial.print(air_quality);
-    Serial.print(F(" Sound_level: "));
-    Serial.print(sound_level);
-    Serial.print(" dB");
-    /* processBluetoothData(); // Process incoming Bluetooth data */
-    publishMessage();
-  }
-  else{
-    Serial.println("Uncommon data detected");
-  }
+  // print out serial values and publish message if air quality is above 0 and smaller than 2000 and sound level is above 0 and smaller than 100
+  /*   if ((air_quality > 0 && air_quality < 2000) && (sound_level > 0 && sound_level < 100))
+    { */
+  Serial.print(F("Air_quality: "));
+  Serial.print(air_quality);
+  Serial.print(F(" Sound_level: "));
+  Serial.print(sound_level);
+  Serial.print(" dB");
+  /* processBluetoothData(); // Process incoming Bluetooth data */
+  publishMessage();
+  /*   }
+    else
+    {
+      Serial.println("Uncommon data detected");
+    } */
   client.loop();
   delay(2000);
 }
