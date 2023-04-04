@@ -152,8 +152,27 @@ void loop() {
   // Print how likely it is to get people in this frame.
   std::cout << "People score: " << score_people_float * 100 << std::endl;
 
+  // Here is where the response is.
+  int result = 0;
+
+  // Pass from probability to numbers.
+  if (score_people_float >= 0.65)
+    result = 2;
+  else if (score_people_float >= 0.5)
+    result = 1;
+  else
+    result = 0;
+
+  /**
+   * @todo HERE IS WHERE THE WIFI / BLUETOOTH CONNECTION SHOULD BE IMPLEMENTED.
+   * 
+   * result = 2: Means that the room is too full.
+   * result = 1: Means that there are some people in the room.
+   * result = 0: Means that the room is empty.
+   */
+
   // Delay the next task so that we can get different results.
-  vTaskDelay(1);
+  vTaskDelay(100);
 
 }
 
