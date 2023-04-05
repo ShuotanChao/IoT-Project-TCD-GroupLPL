@@ -1,8 +1,4 @@
 #include <WiFi.h>
-#include <Arduino.h>
-#include <AsyncTCP.h>
-#include <ESPAsyncWebServer.h>
-#include <AsyncElegantOTA.h>
 #include <MQ135.h>
 #include "Secrets.h"
 #include <WiFiClientSecure.h>
@@ -13,7 +9,6 @@
 #include <Adafruit_GFX.h>
 #include <BluetoothSerial.h>
 #include <NimBLEDevice.h>
-
 #define LED_MATRIX_ADDR 0x70
 #define BUZZER_PIN 16
 #define MQ135_PIN 34
@@ -30,7 +25,7 @@ float sound_level;
 
 static const char *SERVICE_UUID = "3a4e2ff2-c9fb-11ed-afa1-0242ac120002";
 static const char *CHARACTERISTIC_UUID = "7214fb32-c9fb-11ed-afa1-0242ac120002";
-AsyncWebServer server(80);
+
 BluetoothSerial SerialBT;
 
 class CharacteristicCallbacks : public NimBLECharacteristicCallbacks
@@ -53,9 +48,9 @@ float readAndDisplayAirQuality()
   /*   matrix.clear();
     matrix.setCursor(0, 0);
     matrix.print(air_quality);
-    matrix.writeDisplay();
-   */
-  delay(100);
+    matrix.writeDisplay(); */
+
+  delay(1000);
   return air_quality;
 }
 
@@ -64,16 +59,26 @@ float readAndDisplaySoundLevel()
 
   float max9814_gain = 60.0;   // Set this to the gain value you have selected for the MAX9814 (40dB, 50dB, or 60dB)
   float adc_ref_voltage = 3.3; // Set this to your ADC reference voltage (e.g., 3.3V or 5V)
+  // float microphone_sensitivity = -44.0; // Set this to the sensitivity of your electret microphone (e.g., -44 dBV/Pa)
+
   int mic_value = analogRead(MAX_PIN);
   Serial.println(mic_value);
   float output_voltage = (float)mic_value / 4095.0 * adc_ref_voltage;
+
+  // Calculate the input-referred voltage of the microphone
+  // float input_voltage = output_voltage / pow(10, max9814_gain / 20);
+  // float sensitivity_v_per_pa = pow(10, microphone_sensitivity / 20) * 0.001;
+  // float sound_pressure = input_voltage / sensitivity_v_per_pa;
+
+  // Calculate the sound pressure level in dB SPL
+  // Calculate the sound pressure level in dB SPL
   float sound_level1 = 20 * log10(output_voltage / adc_ref_voltage);
 
   /*   matrix.clear();
     matrix.setCursor(0, 0);
     matrix.print(sound_level1);
     matrix.writeDisplay(); */
-  delay(100);
+  delay(1000);
   return sound_level1;
 }
 
@@ -108,33 +113,30 @@ void messageHandler(char *topic, byte *payload, unsigned int length)
   const char *message = doc["message"];
   Serial.println(message);
   float air_quality = doc["air_quality"];
-  float sound_level = doc["sound_level"];
+  float soung_level = doc["sound_level"];
   for (int i = 0; i < length; i++)
   {
-    Serial.print((char)payload[i]); // Print payload content
+    Serial.print((char)payload[i]); // Pring payload content
   }
   char buzzer = (char)payload[62]; // Extracting the controlling command from the Payload to Controlling Buzzer from AWS
   Serial.print("Command: ");
   Serial.println(buzzer);
-  if (air_quality > 100 || sound_level > -5)
+  if (air_quality > 400 || sound_level > -5)
   {
     digitalWrite(BUZZER_PIN, HIGH);
     delay(1000);
     digitalWrite(BUZZER_PIN, LOW);
-
-    // Draw "X" on the LED matrix
     matrix.clear();
-    matrix.drawLine(0, 0, 7, 7, LED_ON);
-    matrix.drawLine(0, 7, 7, 0, LED_ON);
+    matrix.setCursor(0, 0);
+    matrix.print('X');
     matrix.writeDisplay();
   }
   else
   {
     digitalWrite(BUZZER_PIN, LOW);
-
-    // Draw "O" on the LED matrix
     matrix.clear();
-    matrix.drawCircle(3, 3, 3, LED_ON);
+    matrix.setCursor(0, 0);
+    matrix.print('O');
     matrix.writeDisplay();
   }
 }
@@ -148,7 +150,7 @@ void connectAWS()
 
   while (WiFi.status() != WL_CONNECTED)
   {
-    delay(100);
+    delay(1000);
     Serial.print(".");
   }
 
@@ -230,7 +232,7 @@ void setup()
 
   // initialize wifi connection and cloud connection
   Serial.begin(115200);
-  delay(100);
+  delay(1000);
 
   connectAWS();
   Serial.println("Starting Arduino BLE Server application...");
@@ -267,13 +269,6 @@ void setup()
   Serial.println("\nConnected to the WiFi network");
   Serial.print("Local ESP32 IP: ");
   Serial.println(WiFi.localIP());
-  // OTA part
-  server.on("/", HTTP_GET, [](AsyncWebServerRequest *request)
-            { request->send(200, "text/plain", "Hi! I am ESP32."); });
-
-  AsyncElegantOTA.begin(&server); // Start ElegantOTA
-  server.begin();
-  Serial.println("HTTP server started");
 }
 
 void loop()
@@ -285,7 +280,9 @@ void loop()
     Serial.println(F("Failed to read from sensors!"));
     return;
   }
-
+  // print out serial values and publish message if air quality is above 0 and smaller than 2000 and sound level is above 0 and smaller than 100
+  /*   if ((air_quality > 0 && air_quality < 2000) && (sound_level > 0 && sound_level < 100))
+    { */
   Serial.print(F("Air_quality: "));
   Serial.print(air_quality);
   Serial.print(F(" Sound_level: "));
@@ -299,5 +296,5 @@ void loop()
       Serial.println("Uncommon data detected");
     } */
   client.loop();
-  delay(100);
+  delay(2000);
 }
