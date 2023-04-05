@@ -15,6 +15,8 @@
 
 #include "camera_ctrl.h"
 
+#include <math.h>
+
 #include "esp_camera.h"
 #include "esp_system.h"
 #include "sensor.h"
@@ -91,5 +93,52 @@ int init_camera() {
   s->set_vflip(s, 1); // Flip it.
 
   return ESP_OK;
+
+}
+
+void taf_add_new_frame(int8_t *img) {
+
+  // Convert the data from the buffer to the right integers.
+  for (int i = 0; i < cam_width * cam_height * cam_channels; i++) {
+
+    // Get the value we will change.
+    double dif = 0.0;
+
+    // If we have enough, we will calculate what to remove.
+    if (taf_used_frames >= taf_using_frames) {
+      dif -= ((double) taf_background[i] / taf_using_frames);
+    } else {
+      // Increment the counter.
+      taf_used_frames++;
+    }
+
+    // Sum the new value.
+    dif += ((double) img[i] / taf_using_frames);
+
+    // Apply those changes.
+    taf_background[i] += dif;
+
+  }
+
+}
+
+float get_ratio_of_different(int8_t *img, int thresh) {
+
+  // Init the number of pixels.
+  int num_of_px = 0;
+
+  // Convert the data from the buffer to the right integers.
+  for (int i = 0; i < cam_width * cam_height * cam_channels; i++) {
+
+    // Get the value we will change.
+    double dif = fabs(taf_background[i] - img[i]);
+
+    // If the difference is greater than the threshold, mark it as change.
+    if (dif > thresh)
+      num_of_px++;
+
+  }
+
+  return (float) num_of_px / (cam_width * cam_height * cam_channels);
 
 }

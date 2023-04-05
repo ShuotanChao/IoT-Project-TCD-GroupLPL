@@ -88,6 +88,19 @@ void setup() {
     kill_with_error("Memory allocation failed!\n");
   }
 
+  // Allocate space for the fake background.
+  taf_background = (double *) heap_caps_malloc(cam_width * cam_height * cam_size * sizeof(double), MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT);
+
+  // If the returned value is NULL, it means that the memory allocation failed.
+  if (taf_background == NULL) {
+    kill_with_error("2nd memory allocation failed!\n");
+  }
+
+  // Init it.
+  for (int i = 0; i < cam_width * cam_height * cam_channels; i++) {
+    taf_background[i] = 0.0;
+  }
+
   // Build the resolver that we will use to build the interpreter.
   static tflite::MicroMutableOpResolver<5> resolver;
   resolver.AddAveragePool2D();
@@ -134,6 +147,15 @@ void loop() {
     kill_with_error("Camera failed when reading!");
   }
 
+  // Add a new frame if there are not enough.
+  taf_add_new_frame(input->data.int8);
+
+  // If there are not enough frames yet, pass.
+  if (taf_used_frames < taf_using_frames) {
+    vTaskDelay(10);
+    return;
+  }
+
   // Predict the label.
   if (kTfLiteOk != interpreter->Invoke()) {
     kill_with_error("Prediction failed!");
@@ -152,13 +174,16 @@ void loop() {
   // Print how likely it is to get people in this frame.
   std::cout << "People score: " << score_people_float * 100 << std::endl;
 
+  // Get percentage of differences.
+  float ratio = get_ratio_of_different(input->data.int8, 50);
+
   // Here is where the response is.
   int result = 0;
 
   // Pass from probability to numbers.
-  if (score_people_float >= 0.65)
+  if (score_people_float >= 0.65 && ratio > 0.40)
     result = 2;
-  else if (score_people_float >= 0.5)
+  else if (score_people_float >= 0.75 || ratio > 0.30)
     result = 1;
   else
     result = 0;

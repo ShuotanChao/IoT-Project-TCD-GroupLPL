@@ -75,6 +75,11 @@ constexpr int cam_height = 96;
 constexpr int cam_channels = 1;
 constexpr int cam_size = cam_width * cam_height * cam_channels;
 
+// TAF variables.
+constexpr int taf_using_frames = 100;
+static int taf_used_frames = 0;
+static double *taf_background;
+
 /**
  * @brief Get ain image from the camera.
  * 
@@ -94,5 +99,27 @@ int get_image_from_cam(int8_t* img);
  * @returns A status. If is ESP_OK, it's that everything worked.
  */
 int init_camera();
+
+/**
+ * @brief Init the TAF backfround with a new frame.
+ * 
+ * Init the TAF backfround with a new frame.
+ * 
+ * @param new_frame The new frame to be added.
+ */
+void taf_add_new_frame(int8_t *img);
+
+/**
+ * @brief Get the ratio of pixels whose difference from TAF is over thresh.
+ * 
+ * Get the ratio of pixels of img whose difference from the TAF background is
+ * over the threshold thresh.
+ * 
+ * @param img The image to compare.
+ * @param thresh The threshold.
+ * 
+ * @return The ratio of different pixels.
+ */
+float get_ratio_of_different(int8_t *img, int thresh);
 
 #endif  // CAMERA_CTRL_H_
