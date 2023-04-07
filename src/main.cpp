@@ -114,13 +114,13 @@ void messageHandler(char *topic, byte *payload, unsigned int length)
     Serial.print((char)payload[i]); // Print payload content
   }
   char buzzer = (char)payload[62]; // Extracting the controlling command from the Payload to Controlling Buzzer from AWS
-  Serial.print("Command: ");
-  Serial.println(buzzer);
+  digitalWrite(BUZZER_PIN, LOW);
   if (air_quality > 100 || sound_level > -5)
   {
     digitalWrite(BUZZER_PIN, HIGH);
     delay(1000);
     digitalWrite(BUZZER_PIN, LOW);
+    delay(1000);
 
     // Draw "X" on the LED matrix
     matrix.clear();
@@ -130,8 +130,7 @@ void messageHandler(char *topic, byte *payload, unsigned int length)
   }
   else
   {
-    digitalWrite(BUZZER_PIN, LOW);
-
+    digitalWrite(BUZZER_PIN, HIGH);
     // Draw "O" on the LED matrix
     matrix.clear();
     matrix.drawCircle(3, 3, 3, LED_ON);
@@ -211,6 +210,23 @@ void publishMessage()
   }
 } */
 
+void handleResult(AsyncWebServerRequest *request)
+{
+  if (request->hasParam("value"))
+  {
+    int result = request->getParam("value")->value().toInt();
+
+    Serial.print(F(" ESP-EYE: "));
+    Serial.print(result);
+
+    request->send(200, "text/plain", "OK");
+  }
+  else
+  {
+    request->send(400, "text/plain", "Bad Request");
+  }
+}
+
 void setup()
 {
   // initialize local devices
@@ -272,6 +288,8 @@ void setup()
             { request->send(200, "text/plain", "Hi! I am ESP32."); });
 
   AsyncElegantOTA.begin(&server); // Start ElegantOTA
+                                  // Register the request handler for incoming results
+  server.on("/result", HTTP_GET, handleResult);
   server.begin();
   Serial.println("HTTP server started");
 }
@@ -293,11 +311,6 @@ void loop()
   Serial.print(" dB");
   /* processBluetoothData(); // Process incoming Bluetooth data */
   publishMessage();
-  /*   }
-    else
-    {
-      Serial.println("Uncommon data detected");
-    } */
   client.loop();
   delay(100);
 }
